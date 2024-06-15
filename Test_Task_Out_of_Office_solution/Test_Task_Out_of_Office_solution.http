@@ -1,0 +1,6 @@
+@Test_Task_Out_of_Office_solution_HostAddress = http://localhost:5055
+
+GET {{Test_Task_Out_of_Office_solution_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
