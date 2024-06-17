@@ -25,14 +25,18 @@ namespace Test_Task_Out_of_Office_solution.services
                 query = query.Where(p => p.ProjectType.Contains(filterDTO.ProjectType));
             }
 
-            if (filterDTO.StartDateFrom.HasValue)
+            if (filterDTO.StartDateFrom.HasValue && filterDTO.StartDateTo.HasValue)
             {
-                query = query.Where(p => p.StartDate >= filterDTO.StartDateFrom.Value);
+                query = query.Where(lr =>
+                    lr.StartDate >= filterDTO.StartDateFrom.Value && lr.EndDate <= filterDTO.StartDateTo.Value);
             }
-
-            if (filterDTO.StartDateTo.HasValue)
+            else if (filterDTO.StartDateFrom.HasValue)
             {
-                query = query.Where(p => p.StartDate <= filterDTO.StartDateTo.Value);
+                query = query.Where(lr => lr.StartDate >= filterDTO.StartDateFrom.Value);
+            }
+            else if (filterDTO.StartDateTo.HasValue)
+            {
+                query = query.Where(lr => lr.EndDate <= filterDTO.StartDateTo.Value);
             }
 
             if (filterDTO.Status.HasValue)
@@ -40,9 +44,9 @@ namespace Test_Task_Out_of_Office_solution.services
                 query = query.Where(p => p.Status == filterDTO.Status.Value);
             }
 
-            if (filterDTO.RequestNumber.HasValue)
+            if (filterDTO.ProjectNumber.HasValue)
             {
-                query = query.Where(p => p.Id == filterDTO.RequestNumber.Value);
+                query = query.Where(p => p.Id == filterDTO.ProjectNumber.Value);
             }
 
             // Сортировка
@@ -99,7 +103,7 @@ namespace Test_Task_Out_of_Office_solution.services
             };
         }
 
-        public async Task AddProject(ProjectDTO projectDTO)
+        public async Task<Project> AddProject(ProjectDTO projectDTO)
         {
             var project = new Project
             {
@@ -107,12 +111,12 @@ namespace Test_Task_Out_of_Office_solution.services
                 StartDate = projectDTO.StartDate,
                 EndDate = projectDTO.EndDate,
                 ProjectManagerId = projectDTO.ProjectManagerId,
-                Comment = projectDTO.Comment,
-                Status = projectDTO.Status
+                Comment = projectDTO.Comment
             };
 
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
+            return project;
         }
 
         public async Task<bool> UpdateProject(ProjectDTO projectDTO)

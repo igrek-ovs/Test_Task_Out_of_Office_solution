@@ -29,6 +29,13 @@ namespace Test_Task_Out_of_Office_solution.Controllers
             return Ok(employees);
         }
 
+        [HttpGet("get-project-managers")]
+        public async Task<IActionResult> GetProjectManagers()
+        {
+            var prs = await _employeeService.GetProjectManagers();
+            return Ok(prs);
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddEmployee([FromBody] EmployeeDTO employeeDTO)
         {

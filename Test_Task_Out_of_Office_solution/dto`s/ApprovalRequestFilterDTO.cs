@@ -6,5 +6,6 @@
         public bool? SortAscending { get; set; }
         public string? Status { get; set; }
         public int? RequestNumber { get; set; }
+        public string? SearchByFullName { get; set; }
     }
 }

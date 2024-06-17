@@ -10,5 +10,6 @@ namespace Test_Task_Out_of_Office_solution.services.interfaces
         Task<bool> ToggleDeactivateEmployee(int employeeId); 
         Task<List<EmployeeDTO>> GetEmployeesByFilter(EmployeeFilterDTO filterDTO);
         Task<List<EmployeeDTO>> GetHRManagers();
+        Task<List<EmployeeDTO>> GetProjectManagers();
     }
 }

@@ -38,18 +38,13 @@ namespace Test_Task_Out_of_Office_solution.Controllers
         [HttpPost]
         public async Task<ActionResult> AddProject([FromBody] ProjectDTO projectDTO)
         {
-            await _projectService.AddProject(projectDTO);
-            return CreatedAtAction(nameof(GetProject), new { id = projectDTO.Id }, projectDTO);
+            var response = await _projectService.AddProject(projectDTO);
+            return Ok(response);
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateProject(int id, [FromBody] ProjectDTO projectDTO)
+        [HttpPut]
+        public async Task<ActionResult> UpdateProject([FromBody] ProjectDTO projectDTO)
         {
-            if (id != projectDTO.Id)
-            {
-                return BadRequest();
-            }
-
             var result = await _projectService.UpdateProject(projectDTO);
 
             if (!result)

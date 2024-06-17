@@ -40,14 +40,9 @@ namespace Test_Task_Out_of_Office_solution.Controllers
             return Ok(result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateLeaveRequest(int id, [FromBody] LeaveRequestDTO leaveRequestDTO)
+        [HttpPut]
+        public async Task<IActionResult> UpdateLeaveRequest([FromBody] LeaveRequestDTO leaveRequestDTO)
         {
-            if (id != leaveRequestDTO.Id)
-            {
-                return BadRequest();
-            }
-
             var result = await _leaveRequestService.UpdateLeaveRequest(leaveRequestDTO);
             if (!result)
             {
@@ -66,6 +61,22 @@ namespace Test_Task_Out_of_Office_solution.Controllers
             }
             return NoContent();
         }
+        
+        [HttpPost("cancel-leave-request/{id}")]
+        public async Task<IActionResult> CancelLeaveRequest(int id)
+        {
+            var result = await _leaveRequestService.CancelLeaveRequest(id);
+            return Ok(result);
+        }
+
+        [HttpPost("submit-leave-request/{id}")]
+        public async Task<IActionResult> SubmitLeaveRequest(int id)
+        {
+            var result = await _leaveRequestService.SubmitLeaveRequest(id);
+            return Ok(result);
+        }
+        
+        
     }
 
 }

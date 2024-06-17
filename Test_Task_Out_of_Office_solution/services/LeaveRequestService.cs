@@ -24,15 +24,20 @@ namespace Test_Task_Out_of_Office_solution.services
                 query = query.Where(lr => lr.AbsenceReason == filterDTO.AbsenceReason);
             }
 
-            if (filterDTO.StartDate.HasValue)
+            if (filterDTO.StartDate.HasValue && filterDTO.EndDate.HasValue)
+            {
+                query = query.Where(lr =>
+                    lr.StartDate >= filterDTO.StartDate.Value && lr.EndDate <= filterDTO.EndDate.Value);
+            }
+            else if (filterDTO.StartDate.HasValue)
             {
                 query = query.Where(lr => lr.StartDate >= filterDTO.StartDate.Value);
             }
-
-            if (filterDTO.EndDate.HasValue)
+            else if (filterDTO.EndDate.HasValue)
             {
                 query = query.Where(lr => lr.EndDate <= filterDTO.EndDate.Value);
             }
+
 
             if (!string.IsNullOrEmpty(filterDTO.Status))
             {
@@ -49,16 +54,24 @@ namespace Test_Task_Out_of_Office_solution.services
                 switch (filterDTO.SortBy.ToLower())
                 {
                     case "employeename":
-                        query = filterDTO.SortAscending ?? true ? query.OrderBy(lr => lr.Employee.FullName) : query.OrderByDescending(lr => lr.Employee.FullName);
+                        query = filterDTO.SortAscending ?? true
+                            ? query.OrderBy(lr => lr.Employee.FullName)
+                            : query.OrderByDescending(lr => lr.Employee.FullName);
                         break;
                     case "startdate":
-                        query = filterDTO.SortAscending ?? true ? query.OrderBy(lr => lr.StartDate) : query.OrderByDescending(lr => lr.StartDate);
+                        query = filterDTO.SortAscending ?? true
+                            ? query.OrderBy(lr => lr.StartDate)
+                            : query.OrderByDescending(lr => lr.StartDate);
                         break;
                     case "enddate":
-                        query = filterDTO.SortAscending ?? true ? query.OrderBy(lr => lr.EndDate) : query.OrderByDescending(lr => lr.EndDate);
+                        query = filterDTO.SortAscending ?? true
+                            ? query.OrderBy(lr => lr.EndDate)
+                            : query.OrderByDescending(lr => lr.EndDate);
                         break;
                     case "status":
-                        query = filterDTO.SortAscending ?? true ? query.OrderBy(lr => lr.Status) : query.OrderByDescending(lr => lr.Status);
+                        query = filterDTO.SortAscending ?? true
+                            ? query.OrderBy(lr => lr.Status)
+                            : query.OrderByDescending(lr => lr.Status);
                         break;
                 }
             }
@@ -117,24 +130,22 @@ namespace Test_Task_Out_of_Office_solution.services
                 StartDate = leaveRequestDTO.StartDate,
                 EndDate = leaveRequestDTO.EndDate,
                 Comment = leaveRequestDTO.Comment
-                
             };
 
             _context.LeaveRequests.Add(leaveRequest);
             await _context.SaveChangesAsync();
 
-            var approver = await _context.Employees.Where(em => em.Id ==  leaveRequest.EmployeeId).FirstOrDefaultAsync();
-            
-            var approvalRequest = new ApprovalRequest
-            {
-                ApproverId = approver.Id, // Assuming PeoplePartnerId is the approver
-                LeaveRequestId = leaveRequest.Id,
-                Status = "New",
-                
-            };
-
-            _context.ApprovalRequests.Add(approvalRequest);
-            await _context.SaveChangesAsync();
+            // var approver = await _context.Employees.Where(em => em.Id == leaveRequest.EmployeeId).FirstOrDefaultAsync();
+            //
+            // var approvalRequest = new ApprovalRequest
+            // {
+            //     ApproverId = approver.Id, // Assuming PeoplePartnerId is the approver
+            //     LeaveRequestId = leaveRequest.Id,
+            //     Status = "New",
+            // };
+            //
+            // _context.ApprovalRequests.Add(approvalRequest);
+            // await _context.SaveChangesAsync();
 
             return leaveRequest;
         }
@@ -172,6 +183,44 @@ namespace Test_Task_Out_of_Office_solution.services
             await _context.SaveChangesAsync();
             return true;
         }
-    }
 
+        public async Task<bool> SubmitLeaveRequest(int id)
+        {
+            var leaveRequest = await _context.LeaveRequests.Where(lr => lr.Id == id).FirstOrDefaultAsync();
+            if (leaveRequest == null)
+                return false;
+            leaveRequest.Status = "Submitted";
+            await _context.SaveChangesAsync();
+
+            var approver = leaveRequest.Employee.PeoplePartner;
+
+
+            var approvalRequest = new ApprovalRequest
+            {
+                ApproverId = approver.Id,
+                Approver = approver,
+                Comment = leaveRequest.Comment,
+                LeaveRequest = leaveRequest,
+                LeaveRequestId = leaveRequest.Id,
+                Status = "New"
+            };
+
+            await _context.ApprovalRequests.AddAsync(approvalRequest);
+            await _context.SaveChangesAsync();
+                
+            return true;
+        }
+
+        public async Task<bool> CancelLeaveRequest(int id)
+        {
+            var leaveRequest = await _context.LeaveRequests.Where(lr => lr.Id == id).FirstOrDefaultAsync();
+            if (leaveRequest == null)
+                return false;
+            
+            leaveRequest.Status = "Canceled";
+            await _context.SaveChangesAsync();
+            
+            return true;
+        }
+    }
 }

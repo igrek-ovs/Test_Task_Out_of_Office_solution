@@ -3,6 +3,7 @@ using Test_Task_Out_of_Office_solution.dto_s;
 using Test_Task_Out_of_Office_solution.services.interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using Microsoft.IdentityModel.Tokens;
 using Test_Task_Out_of_Office_solution.models;
 
 namespace Test_Task_Out_of_Office_solution.services
@@ -28,6 +29,11 @@ namespace Test_Task_Out_of_Office_solution.services
             if (filterDTO.RequestNumber.HasValue)
             {
                 query = query.Where(ar => ar.Id == filterDTO.RequestNumber.Value);
+            }
+
+            if (!filterDTO.SearchByFullName.IsNullOrEmpty())
+            {
+                query = query.Where(ar => ar.LeaveRequest.Employee.FullName.Contains(filterDTO.SearchByFullName));
             }
 
             if (!string.IsNullOrEmpty(filterDTO.SortBy))
@@ -63,7 +69,8 @@ namespace Test_Task_Out_of_Office_solution.services
                 LeaveRequestId = ar.LeaveRequestId,
                 LeaveRequestDetails = $"From {ar.LeaveRequest.StartDate.ToShortDateString()} to {ar.LeaveRequest.EndDate.ToShortDateString()}",
                 Status = ar.Status,
-                Comment = ar.Comment
+                Comment = ar.Comment,
+                EmployeeName = ar.LeaveRequest.Employee.FullName,
             }).ToList();
         }
 

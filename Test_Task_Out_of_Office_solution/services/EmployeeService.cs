@@ -148,5 +148,20 @@ namespace Test_Task_Out_of_Office_solution.services
             }).ToList();
         }
 
+        public async Task<List<EmployeeDTO>> GetProjectManagers()
+        {
+            var projectManagers = await _context.Employees.Where(em=>em.Position=="Project Manager").ToListAsync();
+            return projectManagers.Select(e => new EmployeeDTO
+            {
+                Id = e.Id,
+                FullName = e.FullName,
+                Subdivision = e.Subdivision,
+                Position = e.Position,
+                PeoplePartnerId = e.PeoplePartnerId,
+                Photo = e.Photo,
+                IsActive = e.IsActive,
+                OutOfOfficeBalance = e.OutOfOfficeBalance
+            }).ToList();        
+        }
     }
 }

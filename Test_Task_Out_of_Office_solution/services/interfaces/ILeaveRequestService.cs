@@ -10,5 +10,7 @@ namespace Test_Task_Out_of_Office_solution.services.interfaces
         Task<LeaveRequest> AddLeaveRequest(LeaveRequestDTO leaveRequestDTO);
         Task<bool> UpdateLeaveRequest(LeaveRequestDTO leaveRequestDTO);
         Task<bool> DeleteLeaveRequest(int id);
+        Task<bool> SubmitLeaveRequest(int id);
+        Task<bool> CancelLeaveRequest(int id);
     }
 }

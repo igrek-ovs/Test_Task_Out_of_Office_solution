@@ -8,6 +8,6 @@
         public DateTime? StartDateFrom { get; set; }
         public DateTime? StartDateTo { get; set; }
         public bool? Status { get; set; }
-        public int? RequestNumber { get; set; }  // Для поиска по номеру запроса
+        public int? ProjectNumber { get; set; }  // Для поиска по номеру запроса
     }
 }
