@@ -36,11 +36,32 @@ namespace Test_Task_Out_of_Office_solution.Controllers
             return Ok(prs);
         }
 
+        [HttpGet("get-user-role")]
+        public async Task<IActionResult> GetUserRole(string fullName, string position)
+        {
+            var userRole = await _employeeService.GetUserRole(fullName, position);
+            return Ok(userRole);
+        }
+
+        [HttpGet("get-employee-by-id/{id}")]
+        public async Task<IActionResult> GetEmployeeById(int employeeId)
+        {
+            var employee = await _employeeService.GetEmployeeById(employeeId);
+            return Ok(employee);
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddEmployee([FromBody] EmployeeDTO employeeDTO)
         {
             await _employeeService.AddEmployee(employeeDTO);
             return Ok();
+        }
+
+        [HttpPost("assign-to-project")]
+        public async Task<IActionResult> AssignEmployeeToProject(int employeeId, int projectId)
+        {
+            var response = await _employeeService.AssignEmployeeToProject(employeeId, projectId);
+            return Ok(response);
         }
 
         [HttpPut]
@@ -52,6 +73,18 @@ namespace Test_Task_Out_of_Office_solution.Controllers
                 return NotFound();
             }
             return Ok();
+        }
+        
+        [HttpPost("upload-photo/{employeeId}")]
+        public async Task<IActionResult> UploadPhoto(int employeeId, [FromForm] IFormFile photo)
+        {
+            var result = await _employeeService.UploadPhotoAsync(employeeId, photo);
+            if (result)
+            {
+                return Ok();
+            }
+
+            return BadRequest("Unable to upload photo");
         }
 
         [HttpDelete("{id}")]

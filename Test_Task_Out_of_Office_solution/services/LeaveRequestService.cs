@@ -24,6 +24,11 @@ namespace Test_Task_Out_of_Office_solution.services
                 query = query.Where(lr => lr.AbsenceReason == filterDTO.AbsenceReason);
             }
 
+            if (filterDTO.EmployeeId.HasValue)
+            {
+                query = query.Where(lr => lr.EmployeeId == filterDTO.EmployeeId);
+            }
+
             if (filterDTO.StartDate.HasValue && filterDTO.EndDate.HasValue)
             {
                 query = query.Where(lr =>
@@ -192,7 +197,8 @@ namespace Test_Task_Out_of_Office_solution.services
             leaveRequest.Status = "Submitted";
             await _context.SaveChangesAsync();
 
-            var approver = leaveRequest.Employee.PeoplePartner;
+            var employee = await _context.Employees.FindAsync(leaveRequest.EmployeeId);
+            var approver = await _context.Employees.FindAsync(employee.PeoplePartnerId);
 
 
             var approvalRequest = new ApprovalRequest

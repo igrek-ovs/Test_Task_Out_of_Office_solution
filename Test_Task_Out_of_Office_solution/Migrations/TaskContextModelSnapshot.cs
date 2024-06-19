@@ -86,6 +86,9 @@ namespace Test_Task_Out_of_Office_solution.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Subdivision")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -93,6 +96,8 @@ namespace Test_Task_Out_of_Office_solution.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PeoplePartnerId");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("Employees");
                 });
@@ -200,7 +205,13 @@ namespace Test_Task_Out_of_Office_solution.Migrations
                         .HasForeignKey("PeoplePartnerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Test_Task_Out_of_Office_solution.models.Project", "Project")
+                        .WithMany("Employees")
+                        .HasForeignKey("ProjectId");
+
                     b.Navigation("PeoplePartner");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Test_Task_Out_of_Office_solution.models.LeaveRequest", b =>
@@ -241,6 +252,11 @@ namespace Test_Task_Out_of_Office_solution.Migrations
             modelBuilder.Entity("Test_Task_Out_of_Office_solution.models.LeaveRequest", b =>
                 {
                     b.Navigation("ApprovalRequest");
+                });
+
+            modelBuilder.Entity("Test_Task_Out_of_Office_solution.models.Project", b =>
+                {
+                    b.Navigation("Employees");
                 });
 #pragma warning restore 612, 618
         }

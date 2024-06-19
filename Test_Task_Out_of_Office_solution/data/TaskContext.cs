@@ -40,6 +40,11 @@ namespace Test_Task_Out_of_Office_solution.data
                 .HasForeignKey<ApprovalRequest>(ar => ar.LeaveRequestId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
+            
+            modelBuilder.Entity<Employee>()
+                .HasOne(e => e.Project)
+                .WithMany(p => p.Employees)
+                .HasForeignKey(e => e.ProjectId);
 
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.ProjectManager)

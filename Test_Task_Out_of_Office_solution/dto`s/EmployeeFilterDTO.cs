@@ -9,5 +9,6 @@
         public int? OutOfOfficeBalanceLeft { get; set; }
         public int? OutOfOfficeBalanceRight { get; set; }
         public string? SearchByName { get; set; }
+        public string? Position { get; set; }
     }
 }

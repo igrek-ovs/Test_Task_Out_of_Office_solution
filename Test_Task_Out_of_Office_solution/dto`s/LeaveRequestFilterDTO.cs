@@ -9,5 +9,6 @@
         public DateTime? EndDate { get; set; } // filter by end date
         public string? Status { get; set; } // filter by status
         public int? RequestNumber { get; set; } // search by request number (ID)
+        public int? EmployeeId { get; set; }
     }
 }

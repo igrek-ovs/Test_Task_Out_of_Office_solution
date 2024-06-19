@@ -9,8 +9,10 @@
         public bool IsActive { get; set; } = true;
         public int? PeoplePartnerId { get; set; }
         public Employee? PeoplePartner { get; set; }
-        public int OutOfOfficeBalance { get; set; }
+        public int? OutOfOfficeBalance { get; set; }
         public byte[]? Photo { get; set; }
+        public int? ProjectId { get; set; }
+        public Project? Project { get; set; }
 
         public ICollection<LeaveRequest>? LeaveRequests { get; set; }
         public ICollection<ApprovalRequest>? ApprovalRequests { get; set; }

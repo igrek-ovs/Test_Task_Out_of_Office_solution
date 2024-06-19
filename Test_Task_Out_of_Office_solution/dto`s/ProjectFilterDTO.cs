@@ -9,5 +9,6 @@
         public DateTime? StartDateTo { get; set; }
         public bool? Status { get; set; }
         public int? ProjectNumber { get; set; }  // Для поиска по номеру запроса
+        public int? AssignedEmployeeId { get; set; }
     }
 }

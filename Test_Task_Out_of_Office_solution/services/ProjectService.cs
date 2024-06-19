@@ -19,7 +19,22 @@ namespace Test_Task_Out_of_Office_solution.services
         {
             var query = _context.Projects.Include(p => p.ProjectManager).AsQueryable();
 
-            // Применение фильтров
+            if (filterDTO.AssignedEmployeeId.HasValue)
+            {
+                var employee = await _context.Employees
+                    .Include(e => e.Projects) 
+                    .FirstOrDefaultAsync(e => e.Id == filterDTO.AssignedEmployeeId.Value);
+    
+                if (employee != null)
+                {
+                    var employeeProjectIds = employee.Projects.Select(p => p.Id).ToList();
+        
+                    query = query.Where(p => employeeProjectIds.Contains(p.Id));
+                }
+            }
+
+            
+            
             if (!string.IsNullOrEmpty(filterDTO.ProjectType))
             {
                 query = query.Where(p => p.ProjectType.Contains(filterDTO.ProjectType));

@@ -19,7 +19,8 @@ namespace Test_Task_Out_of_Office_solution.services
 
         public async Task<List<ApprovalRequestDTO>> GetApprovalRequestsByFilter(ApprovalRequestFilterDTO filterDTO)
         {
-            var query = _context.ApprovalRequests.Include(ar => ar.Approver).Include(ar => ar.LeaveRequest).AsQueryable();
+            var query = _context.ApprovalRequests.Include(ar => ar.Approver).Include(ar => ar.LeaveRequest)
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(filterDTO.Status))
             {
@@ -40,9 +41,9 @@ namespace Test_Task_Out_of_Office_solution.services
             {
                 if (filterDTO.SortBy.Equals("ApproverName", StringComparison.OrdinalIgnoreCase))
                 {
-                    query = filterDTO.SortAscending.GetValueOrDefault() ?
-                        query.OrderBy(ar => ar.Approver.FullName) :
-                        query.OrderByDescending(ar => ar.Approver.FullName);
+                    query = filterDTO.SortAscending.GetValueOrDefault()
+                        ? query.OrderBy(ar => ar.Approver.FullName)
+                        : query.OrderByDescending(ar => ar.Approver.FullName);
                 }
                 else
                 {
@@ -53,9 +54,9 @@ namespace Test_Task_Out_of_Office_solution.services
                         _ => ar => ar.Id,
                     };
 
-                    query = filterDTO.SortAscending.GetValueOrDefault() ?
-                        query.OrderBy(sortExpression) :
-                        query.OrderByDescending(sortExpression);
+                    query = filterDTO.SortAscending.GetValueOrDefault()
+                        ? query.OrderBy(sortExpression)
+                        : query.OrderByDescending(sortExpression);
                 }
             }
 
@@ -67,7 +68,8 @@ namespace Test_Task_Out_of_Office_solution.services
                 ApproverId = ar.ApproverId,
                 ApproverName = ar.Approver.FullName,
                 LeaveRequestId = ar.LeaveRequestId,
-                LeaveRequestDetails = $"From {ar.LeaveRequest.StartDate.ToShortDateString()} to {ar.LeaveRequest.EndDate.ToShortDateString()}",
+                LeaveRequestDetails =
+                    $"From {ar.LeaveRequest.StartDate.ToShortDateString()} to {ar.LeaveRequest.EndDate.ToShortDateString()}",
                 Status = ar.Status,
                 Comment = ar.Comment,
                 EmployeeName = ar.LeaveRequest.Employee.FullName,
@@ -77,9 +79,9 @@ namespace Test_Task_Out_of_Office_solution.services
         public async Task<ApprovalRequestDTO> GetApprovalRequestById(int id)
         {
             var approvalRequest = await _context.ApprovalRequests
-                                                .Include(ar => ar.Approver)
-                                                .Include(ar => ar.LeaveRequest)
-                                                .FirstOrDefaultAsync(ar => ar.Id == id);
+                .Include(ar => ar.Approver)
+                .Include(ar => ar.LeaveRequest)
+                .FirstOrDefaultAsync(ar => ar.Id == id);
 
             if (approvalRequest == null) return null;
 
@@ -89,7 +91,8 @@ namespace Test_Task_Out_of_Office_solution.services
                 ApproverId = approvalRequest.ApproverId,
                 ApproverName = approvalRequest.Approver.FullName,
                 LeaveRequestId = approvalRequest.LeaveRequestId,
-                LeaveRequestDetails = $"From {approvalRequest.LeaveRequest.StartDate.ToShortDateString()} to {approvalRequest.LeaveRequest.EndDate.ToShortDateString()}",
+                LeaveRequestDetails =
+                    $"From {approvalRequest.LeaveRequest.StartDate.ToShortDateString()} to {approvalRequest.LeaveRequest.EndDate.ToShortDateString()}",
                 Status = approvalRequest.Status,
                 Comment = approvalRequest.Comment
             };
@@ -98,13 +101,16 @@ namespace Test_Task_Out_of_Office_solution.services
         public async Task<bool> ApproveRequest(int id)
         {
             var approvalRequest = await _context.ApprovalRequests
-                                                .Include(ar => ar.LeaveRequest)
-                                                .FirstOrDefaultAsync(ar => ar.Id == id);
+                .Include(ar => ar.LeaveRequest)
+                .FirstOrDefaultAsync(ar => ar.Id == id);
 
             if (approvalRequest == null) return false;
 
             approvalRequest.Status = "Approved";
             approvalRequest.LeaveRequest.Status = "Approved";
+            var employeeToRecalculate = await _context.Employees.FindAsync(approvalRequest.LeaveRequest.EmployeeId);
+            employeeToRecalculate.OutOfOfficeBalance -=
+                (approvalRequest.LeaveRequest.EndDate - approvalRequest.LeaveRequest.StartDate).Days;
             _context.ApprovalRequests.Update(approvalRequest);
             await _context.SaveChangesAsync();
 
@@ -114,8 +120,8 @@ namespace Test_Task_Out_of_Office_solution.services
         public async Task<bool> RejectRequest(int id, string comment)
         {
             var approvalRequest = await _context.ApprovalRequests
-                                                .Include(ar => ar.LeaveRequest)
-                                                .FirstOrDefaultAsync(ar => ar.Id == id);
+                .Include(ar => ar.LeaveRequest)
+                .FirstOrDefaultAsync(ar => ar.Id == id);
 
             if (approvalRequest == null) return false;
 
@@ -131,8 +137,8 @@ namespace Test_Task_Out_of_Office_solution.services
         public async Task<bool> DeleteApprovalRequest(int id)
         {
             var approvalRequest = await _context.ApprovalRequests
-                                                .Include(ar => ar.LeaveRequest)
-                                                .FirstOrDefaultAsync(ar => ar.Id == id);
+                .Include(ar => ar.LeaveRequest)
+                .FirstOrDefaultAsync(ar => ar.Id == id);
 
             if (approvalRequest == null) return false;
 
@@ -146,7 +152,7 @@ namespace Test_Task_Out_of_Office_solution.services
         public async Task<bool> UpdateApprovalRequest(ApprovalRequestDTO approvalRequestDTO)
         {
             var approvalRequest = await _context.ApprovalRequests
-                                                .FirstOrDefaultAsync(ar => ar.Id == approvalRequestDTO.Id);
+                .FirstOrDefaultAsync(ar => ar.Id == approvalRequestDTO.Id);
 
             if (approvalRequest == null) return false;
 

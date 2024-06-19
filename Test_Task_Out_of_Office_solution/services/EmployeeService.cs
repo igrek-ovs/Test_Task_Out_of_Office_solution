@@ -23,7 +23,8 @@ namespace Test_Task_Out_of_Office_solution.services
                 Subdivision = employeeDTO.Subdivision,
                 Position = employeeDTO.Position,
                 PeoplePartnerId = employeeDTO.PeoplePartnerId,
-                Photo = employeeDTO.Photo
+                Photo = employeeDTO.Photo,
+                OutOfOfficeBalance = employeeDTO.OutOfOfficeBalance
             };
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
@@ -72,6 +73,11 @@ namespace Test_Task_Out_of_Office_solution.services
         public async Task<List<EmployeeDTO>> GetEmployeesByFilter(EmployeeFilterDTO filterDTO)
         {
             var query = _context.Employees.AsQueryable();
+
+            if (!string.IsNullOrEmpty(filterDTO.Position))
+            {
+                query = query.Where(e => e.Position == filterDTO.Position);
+            }
 
             if (!string.IsNullOrEmpty(filterDTO.SearchByName))
             {
@@ -162,6 +168,74 @@ namespace Test_Task_Out_of_Office_solution.services
                 IsActive = e.IsActive,
                 OutOfOfficeBalance = e.OutOfOfficeBalance
             }).ToList();        
+        }
+
+        public async Task<Employee> GetUserRole(string fullName, string position)
+        {
+            var user = _context.Employees.Where(em => em.FullName == fullName && em.Position==position).FirstOrDefaultAsync().Result;
+            return user;
+        }
+
+        public async Task<bool> AssignEmployeeToProject(int employeeId, int projectId)
+        {
+            var employee = await _context.Employees
+                .Include(e => e.Projects)
+                .FirstOrDefaultAsync(e => e.Id == employeeId);
+            var project = await _context.Projects
+                .Include(p => p.Employees)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+            if (employee != null && project != null)
+            {
+                if (employee.Projects == null)
+                {
+                    employee.Projects = new List<Project>();
+                }
+                if (!employee.Projects.Contains(project))
+                {
+                    employee.Projects.Add(project);
+                    await _context.SaveChangesAsync();
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+
+        public async Task<EmployeeDTO> GetEmployeeById(int employeeId)
+        {
+            var employee = await _context.Employees.Where(e => e.Id == employeeId).FirstOrDefaultAsync();
+            return new EmployeeDTO
+            {
+                Id = employee.Id,
+                FullName = employee.FullName,
+                IsActive = employee.IsActive,
+                OutOfOfficeBalance = employee.OutOfOfficeBalance,
+                PeoplePartnerId = employee.PeoplePartnerId,
+                Position = employee.Position,
+                Photo = employee.Photo,
+                Subdivision = employee.Subdivision
+            };
+        }
+
+        public async Task<bool> UploadPhotoAsync(int employeeId, IFormFile photo)
+        {
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null) return false;
+
+            if (photo != null && photo.Length > 0)
+            {
+                using (var ms = new MemoryStream())
+                {
+                    await photo.CopyToAsync(ms);
+                    employee.Photo = ms.ToArray();
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
         }
     }
 }

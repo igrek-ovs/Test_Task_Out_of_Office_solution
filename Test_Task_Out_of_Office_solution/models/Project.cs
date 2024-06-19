@@ -12,7 +12,7 @@ namespace Test_Task_Out_of_Office_solution.models
         public Employee ProjectManager { get; set; }
         public string? Comment { get; set; }
 
-        [ReadOnly(true)] public bool Status { get; set; } = true;
-        //public ICollection<Employee> Employees { get; set; }
+        public bool Status { get; set; } = true;
+        public ICollection<Employee> Employees { get; set; }
     }
 }
