@@ -73,7 +73,7 @@ namespace Test_Task_Out_of_Office_solution.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<int>("OutOfOfficeBalance")
+                    b.Property<int?>("OutOfOfficeBalance")
                         .HasColumnType("int");
 
                     b.Property<int?>("PeoplePartnerId")

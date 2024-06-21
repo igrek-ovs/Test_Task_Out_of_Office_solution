@@ -1,170 +1,161 @@
-﻿using Test_Task_Out_of_Office_solution.data;
-using Test_Task_Out_of_Office_solution.dto_s;
-using Test_Task_Out_of_Office_solution.services.interfaces;
+﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 using Microsoft.IdentityModel.Tokens;
+using Test_Task_Out_of_Office_solution.data;
+using Test_Task_Out_of_Office_solution.dto_s;
 using Test_Task_Out_of_Office_solution.models;
+using Test_Task_Out_of_Office_solution.services.interfaces;
 
-namespace Test_Task_Out_of_Office_solution.services
+namespace Test_Task_Out_of_Office_solution.services;
+
+public class ApprovalRequestService : IApprovalRequestService
 {
-    public class ApprovalRequestService : IApprovalRequestService
+    private readonly TaskContext _context;
+
+    public ApprovalRequestService(TaskContext context)
     {
-        private readonly TaskContext _context;
+        _context = context;
+    }
 
-        public ApprovalRequestService(TaskContext context)
+    public async Task<List<ApprovalRequestDTO>> GetApprovalRequestsByFilter(ApprovalRequestFilterDTO filterDTO)
+    {
+        var query = _context.ApprovalRequests.Include(ar => ar.Approver).Include(ar => ar.LeaveRequest).Include(ar=> ar.LeaveRequest.Employee)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(filterDTO.Status)) query = query.Where(ar => ar.Status == filterDTO.Status);
+
+        if (filterDTO.RequestNumber.HasValue) query = query.Where(ar => ar.Id == filterDTO.RequestNumber.Value);
+
+        if (!filterDTO.SearchByFullName.IsNullOrEmpty())
+            query = query.Where(ar => ar.LeaveRequest.Employee.FullName.Contains(filterDTO.SearchByFullName));
+
+        if (!string.IsNullOrEmpty(filterDTO.SortBy))
         {
-            _context = context;
-        }
-
-        public async Task<List<ApprovalRequestDTO>> GetApprovalRequestsByFilter(ApprovalRequestFilterDTO filterDTO)
-        {
-            var query = _context.ApprovalRequests.Include(ar => ar.Approver).Include(ar => ar.LeaveRequest)
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(filterDTO.Status))
+            if (filterDTO.SortBy.Equals("ApproverName", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(ar => ar.Status == filterDTO.Status);
+                query = filterDTO.SortAscending.GetValueOrDefault()
+                    ? query.OrderBy(ar => ar.Approver.FullName)
+                    : query.OrderByDescending(ar => ar.Approver.FullName);
             }
-
-            if (filterDTO.RequestNumber.HasValue)
+            else
             {
-                query = query.Where(ar => ar.Id == filterDTO.RequestNumber.Value);
-            }
-
-            if (!filterDTO.SearchByFullName.IsNullOrEmpty())
-            {
-                query = query.Where(ar => ar.LeaveRequest.Employee.FullName.Contains(filterDTO.SearchByFullName));
-            }
-
-            if (!string.IsNullOrEmpty(filterDTO.SortBy))
-            {
-                if (filterDTO.SortBy.Equals("ApproverName", StringComparison.OrdinalIgnoreCase))
+                Expression<Func<ApprovalRequest, object>> sortExpression = filterDTO.SortBy switch
                 {
-                    query = filterDTO.SortAscending.GetValueOrDefault()
-                        ? query.OrderBy(ar => ar.Approver.FullName)
-                        : query.OrderByDescending(ar => ar.Approver.FullName);
-                }
-                else
-                {
-                    Expression<Func<ApprovalRequest, object>> sortExpression = filterDTO.SortBy switch
-                    {
-                        "LeaveRequestId" => ar => ar.LeaveRequestId,
-                        "Status" => ar => ar.Status,
-                        _ => ar => ar.Id,
-                    };
+                    "LeaveRequestId" => ar => ar.LeaveRequestId,
+                    "Status" => ar => ar.Status,
+                    _ => ar => ar.Id
+                };
 
-                    query = filterDTO.SortAscending.GetValueOrDefault()
-                        ? query.OrderBy(sortExpression)
-                        : query.OrderByDescending(sortExpression);
-                }
+                query = filterDTO.SortAscending.GetValueOrDefault()
+                    ? query.OrderBy(sortExpression)
+                    : query.OrderByDescending(sortExpression);
             }
-
-            var approvalRequests = await query.ToListAsync();
-
-            return approvalRequests.Select(ar => new ApprovalRequestDTO
-            {
-                Id = ar.Id,
-                ApproverId = ar.ApproverId,
-                ApproverName = ar.Approver.FullName,
-                LeaveRequestId = ar.LeaveRequestId,
-                LeaveRequestDetails =
-                    $"From {ar.LeaveRequest.StartDate.ToShortDateString()} to {ar.LeaveRequest.EndDate.ToShortDateString()}",
-                Status = ar.Status,
-                Comment = ar.Comment,
-                EmployeeName = ar.LeaveRequest.Employee.FullName,
-            }).ToList();
         }
 
-        public async Task<ApprovalRequestDTO> GetApprovalRequestById(int id)
+        var approvalRequests = await query.ToListAsync();
+
+        return approvalRequests.Select(ar => new ApprovalRequestDTO
         {
-            var approvalRequest = await _context.ApprovalRequests
-                .Include(ar => ar.Approver)
-                .Include(ar => ar.LeaveRequest)
-                .FirstOrDefaultAsync(ar => ar.Id == id);
+            Id = ar.Id,
+            ApproverId = ar.ApproverId,
+            ApproverName = ar.Approver.FullName,
+            LeaveRequestId = ar.LeaveRequestId,
+            LeaveRequestDetails =
+                $"From {ar.LeaveRequest.StartDate.ToShortDateString()} to {ar.LeaveRequest.EndDate.ToShortDateString()}",
+            Status = ar.Status,
+            Comment = ar.Comment,
+            EmployeeName = ar.LeaveRequest.Employee.FullName
+        }).ToList();
+    }
 
-            if (approvalRequest == null) return null;
+    public async Task<ApprovalRequestDTO> GetApprovalRequestById(int id)
+    {
+        var approvalRequest = await _context.ApprovalRequests
+            .Include(ar => ar.Approver)
+            .Include(ar => ar.LeaveRequest)
+            .FirstOrDefaultAsync(ar => ar.Id == id);
 
-            return new ApprovalRequestDTO
-            {
-                Id = approvalRequest.Id,
-                ApproverId = approvalRequest.ApproverId,
-                ApproverName = approvalRequest.Approver.FullName,
-                LeaveRequestId = approvalRequest.LeaveRequestId,
-                LeaveRequestDetails =
-                    $"From {approvalRequest.LeaveRequest.StartDate.ToShortDateString()} to {approvalRequest.LeaveRequest.EndDate.ToShortDateString()}",
-                Status = approvalRequest.Status,
-                Comment = approvalRequest.Comment
-            };
-        }
+        if (approvalRequest == null) return null;
 
-        public async Task<bool> ApproveRequest(int id)
+        return new ApprovalRequestDTO
         {
-            var approvalRequest = await _context.ApprovalRequests
-                .Include(ar => ar.LeaveRequest)
-                .FirstOrDefaultAsync(ar => ar.Id == id);
+            Id = approvalRequest.Id,
+            ApproverId = approvalRequest.ApproverId,
+            ApproverName = approvalRequest.Approver.FullName,
+            LeaveRequestId = approvalRequest.LeaveRequestId,
+            LeaveRequestDetails =
+                $"From {approvalRequest.LeaveRequest.StartDate.ToShortDateString()} to {approvalRequest.LeaveRequest.EndDate.ToShortDateString()}",
+            Status = approvalRequest.Status,
+            Comment = approvalRequest.Comment
+        };
+    }
 
-            if (approvalRequest == null) return false;
+    public async Task<bool> ApproveRequest(int id)
+    {
+        var approvalRequest = await _context.ApprovalRequests
+            .Include(ar => ar.LeaveRequest)
+            .FirstOrDefaultAsync(ar => ar.Id == id);
 
-            approvalRequest.Status = "Approved";
-            approvalRequest.LeaveRequest.Status = "Approved";
-            var employeeToRecalculate = await _context.Employees.FindAsync(approvalRequest.LeaveRequest.EmployeeId);
-            employeeToRecalculate.OutOfOfficeBalance -=
-                (approvalRequest.LeaveRequest.EndDate - approvalRequest.LeaveRequest.StartDate).Days;
-            _context.ApprovalRequests.Update(approvalRequest);
-            await _context.SaveChangesAsync();
+        if (approvalRequest == null) return false;
 
-            return true;
-        }
+        approvalRequest.Status = "Approved";
+        approvalRequest.LeaveRequest.Status = "Approved";
+        var employeeToRecalculate = await _context.Employees.FindAsync(approvalRequest.LeaveRequest.EmployeeId);
+        employeeToRecalculate.OutOfOfficeBalance -=
+            (approvalRequest.LeaveRequest.EndDate - approvalRequest.LeaveRequest.StartDate).Days;
+        _context.ApprovalRequests.Update(approvalRequest);
+        await _context.SaveChangesAsync();
 
-        public async Task<bool> RejectRequest(int id, string comment)
-        {
-            var approvalRequest = await _context.ApprovalRequests
-                .Include(ar => ar.LeaveRequest)
-                .FirstOrDefaultAsync(ar => ar.Id == id);
+        return true;
+    }
 
-            if (approvalRequest == null) return false;
+    public async Task<bool> RejectRequest(int id, string comment)
+    {
+        var approvalRequest = await _context.ApprovalRequests
+            .Include(ar => ar.LeaveRequest)
+            .FirstOrDefaultAsync(ar => ar.Id == id);
 
-            approvalRequest.Status = "Rejected";
-            approvalRequest.LeaveRequest.Status = "Rejected";
-            approvalRequest.Comment = comment;
-            _context.ApprovalRequests.Update(approvalRequest);
-            await _context.SaveChangesAsync();
+        if (approvalRequest == null) return false;
 
-            return true;
-        }
+        approvalRequest.Status = "Rejected";
+        approvalRequest.LeaveRequest.Status = "Rejected";
+        approvalRequest.Comment = comment;
+        _context.ApprovalRequests.Update(approvalRequest);
+        await _context.SaveChangesAsync();
 
-        public async Task<bool> DeleteApprovalRequest(int id)
-        {
-            var approvalRequest = await _context.ApprovalRequests
-                .Include(ar => ar.LeaveRequest)
-                .FirstOrDefaultAsync(ar => ar.Id == id);
+        return true;
+    }
 
-            if (approvalRequest == null) return false;
+    public async Task<bool> DeleteApprovalRequest(int id)
+    {
+        var approvalRequest = await _context.ApprovalRequests
+            .Include(ar => ar.LeaveRequest)
+            .FirstOrDefaultAsync(ar => ar.Id == id);
 
-            _context.LeaveRequests.Remove(approvalRequest.LeaveRequest);
-            _context.ApprovalRequests.Remove(approvalRequest);
-            await _context.SaveChangesAsync();
+        if (approvalRequest == null) return false;
 
-            return true;
-        }
+        _context.LeaveRequests.Remove(approvalRequest.LeaveRequest);
+        _context.ApprovalRequests.Remove(approvalRequest);
+        await _context.SaveChangesAsync();
 
-        public async Task<bool> UpdateApprovalRequest(ApprovalRequestDTO approvalRequestDTO)
-        {
-            var approvalRequest = await _context.ApprovalRequests
-                .FirstOrDefaultAsync(ar => ar.Id == approvalRequestDTO.Id);
+        return true;
+    }
 
-            if (approvalRequest == null) return false;
+    public async Task<bool> UpdateApprovalRequest(ApprovalRequestDTO approvalRequestDTO)
+    {
+        var approvalRequest = await _context.ApprovalRequests
+            .FirstOrDefaultAsync(ar => ar.Id == approvalRequestDTO.Id);
 
-            approvalRequest.ApproverId = approvalRequestDTO.ApproverId;
-            approvalRequest.LeaveRequestId = approvalRequestDTO.LeaveRequestId;
-            approvalRequest.Status = approvalRequestDTO.Status;
-            approvalRequest.Comment = approvalRequestDTO.Comment;
+        if (approvalRequest == null) return false;
 
-            _context.ApprovalRequests.Update(approvalRequest);
-            await _context.SaveChangesAsync();
+        approvalRequest.ApproverId = approvalRequestDTO.ApproverId;
+        approvalRequest.LeaveRequestId = approvalRequestDTO.LeaveRequestId;
+        approvalRequest.Status = approvalRequestDTO.Status;
+        approvalRequest.Comment = approvalRequestDTO.Comment;
 
-            return true;
-        }
+        _context.ApprovalRequests.Update(approvalRequest);
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 }

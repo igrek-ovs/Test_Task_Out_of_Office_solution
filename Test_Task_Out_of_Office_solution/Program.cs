@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Test_Task_Out_of_Office_solution.data;
 using Test_Task_Out_of_Office_solution.services;
 using Test_Task_Out_of_Office_solution.services.interfaces;
